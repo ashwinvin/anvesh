@@ -1,0 +1,49 @@
+###########
+# General #
+###########
+
+# 0 - Trace
+# 1 - Debug
+# 2 - Info
+# 4 - Warn
+# 5 - Error
+log_level : 1
+threads : 10 # Number of threads to spin up
+
+##########
+# Server #
+##########
+
+port : 8080 # port on which server should be launched
+bind_ip : "127.0.0.1" # interface on the which server should listen on
+
+rate_limiter : 
+  - number_of_requests : 20 # The number of request that are allowed within a provided time limit.
+  - time_limit : 3 # The time limit in which the quantity of requests that should be accepted.
+
+# timeout for the search requests sent to the upstream search engines to be fetched (value in seconds).
+request_timeout : 30 
+
+##########
+# Search #
+##########
+
+# 0 - No filtering
+# 1 - Low ; Safe search level will be set to low on upstream engines 
+# 2 - Moderate ; Safe search level will be set to moderate on upstream engines 
+# 3 - High ; Safe search level will be set to high on upstream engines 
+safe_search : 1
+
+###########
+# Caching #
+###########
+
+redis_url : "redis://127.0.0.1:8082" 
+# TTL for cached results (value in seconds and the value should be greater than or equal to 60 seconds).
+cache_expiry_time : 600 
+
+### Search Engines ###
+upstream_search_engines : {
+    DuckDuckGo : true,
+    Bing : false,
+} 

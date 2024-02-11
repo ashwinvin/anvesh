@@ -1,0 +1,18 @@
+[package]
+name = "backend"
+version = "0.0.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.79"
+async-trait = "0.1.77"
+regex = "1.10.3"
+reqwest = {version = "0.11.24", features = ["json"]}
+scraper = "0.18.1"
+serde = { version = "1.0.196", features = ["derive"] }
+thiserror = "1.0.56"
+tokio = { version = "1.36.0", features = ["rt-multi-thread"] }
+tracing = "0.1.40"
+url = "2.5.0"

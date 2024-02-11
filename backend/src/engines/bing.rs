@@ -1,0 +1,107 @@
+use std::{collections::HashMap, sync::Arc};
+
+use regex::Regex;
+
+use reqwest::header::HeaderMap;
+use scraper::{Html, Selector};
+
+use crate::{
+    errors::EngineError, network::NetworkHandler, Relavancy, SafeSearchLevel, SearchResult,
+};
+
+use super::{parse_generic_results, Engine};
+
+const COOKIE_PARAMS: &str =
+    "_EDGE_V=1;SRCHD=AF=NOFORM;_Rwho=u=d;bngps=s=0;_UR=QS=0&TQS=0;_UR=QS=0&TQS=0;";
+
+#[derive(Debug)]
+pub struct Bing {
+    no_results_selector: Selector,
+    text_results_selector: Selector,
+    text_result_url_selector: Selector,
+    text_result_title_selector: Selector,
+    text_result_desc_selector: Selector,
+    re_strong: Regex,
+    re_span: Regex,
+}
+
+impl Default for Bing {
+    fn default() -> Self {
+        Self {
+            no_results_selector: Selector::parse(".b_results").unwrap(),
+            text_results_selector: Selector::parse(".b_algo").unwrap(),
+            text_result_url_selector: Selector::parse(".tpcn a.tilk").unwrap(),
+            text_result_title_selector: Selector::parse("h2 a").unwrap(),
+            text_result_desc_selector: Selector::parse(".b_caption p").unwrap(),
+
+            re_span: Regex::new(r#"<span.*?>.*?(?:</span>&nbsp;·|</span>)"#).unwrap(),
+            re_strong: Regex::new(r#"(<strong>|</strong>)"#).unwrap(),
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl Engine for Bing {
+    async fn search_text(
+        &self,
+        qclient: Arc<NetworkHandler>,
+        page_idx: u16,
+        query: String,
+        _relavancy: Option<Relavancy>,
+        _safe_level: Option<SafeSearchLevel>,
+    ) -> Result<Vec<SearchResult>, EngineError> {
+        let cont_result = 10 * page_idx + 1;
+
+        let url = match page_idx {
+            0 => format!("https://www.bing.com/search?q={query}"),
+            _ => format!("https://www.bing.com/search?q={query}&first={cont_result}"),
+        };
+
+        let headers = HeaderMap::try_from(&HashMap::from([
+            ("REFERER".to_string(), "https://google.com/".to_string()),
+            (
+                "CONTENT_TYPE".to_string(),
+                "application/x-www-form-urlencoded".to_string(),
+            ),
+            ("COOKIE".to_string(), COOKIE_PARAMS.to_string()),
+        ]))
+        .unwrap();
+
+        let page = qclient
+            .get_data(&url, headers, crate::network::SourceType::String)
+            .await?;
+
+        let page = Html::parse_document(&page);
+
+        if let Some(no_result_msg) = page.select(&self.no_results_selector).nth(0) {
+            if no_result_msg
+                .value()
+                .attr("class")
+                .map(|classes| classes.contains("b_algo"))
+                .unwrap_or(false)
+            {
+                return Err(EngineError::NoResults);
+            }
+        }
+
+        let results = parse_generic_results(&page, &self.text_results_selector, |result| {
+            let title = result.select(&self.text_result_title_selector).next();
+            let url = result.select(&self.text_result_url_selector).next();
+            let desc = result.select(&self.text_result_desc_selector).next();
+
+            if let (Some(title), Some(url), Some(desc)) = (title, url, desc) {
+                Some(SearchResult::new(
+                    url.value().attr("href").unwrap(),
+                    &self.re_strong.replace_all(title.inner_html().trim(), ""),
+                    &self.re_span.replace_all(desc.inner_html().trim(), ""),
+                    "Bing",
+                ))
+            } else {
+                None
+            }
+        })
+        .map_err(|_| EngineError::ParseFailed)?;
+
+        Ok(results)
+    }
+}
