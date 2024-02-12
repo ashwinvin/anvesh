@@ -34,7 +34,7 @@ pub struct Config {
 }
 
 #[derive(Debug, Deserialize)]
-enum ProxyType {
+pub enum ProxyType {
     Socks5,
     Http,
 }

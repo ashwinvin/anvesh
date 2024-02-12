@@ -13,7 +13,7 @@ use axum::{routing::get, Router};
 use config::parse_config;
 
 use tracing::level_filters::LevelFilter;
-use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter, FmtSubscriber};
+use tracing_subscriber::{fmt::format::FmtSpan, FmtSubscriber};
 
 use crate::server::{index_handler, search_handler};
 

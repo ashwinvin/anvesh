@@ -76,6 +76,9 @@ impl NetworkHandler {
         source_type: SourceType,
     ) -> Result<String, NetworkError> {
         let data = self.client.get(url).headers(headers).send().await?;
+        
+        tracing::trace!("Request to {url} returned {}", data.status());
+
         let parsed_data = match source_type {
             SourceType::String => data.text().await?,
             SourceType::Json => data.json().await?,
