@@ -47,7 +47,10 @@ pub struct SearchResult {
 
 impl PartialEq for SearchResult {
     fn eq(&self, other: &Self) -> bool {
-        self.url == other.url
+        // Ignore transport type as it always will http or https
+        self.url.host().unwrap() == other.url.host().unwrap()
+            && self.url.path() == other.url.path()
+            && self.url.query() == other.url.query()
     }
 }
 

@@ -33,7 +33,7 @@ async fn main() -> anyhow::Result<()> {
     let logger = FmtSubscriber::builder()
         .with_env_filter(&format!("hyper=warn,backend={0},anvesh={0}", log_level))
         // .with_max_level(log_level)
-        .with_span_events(FmtSpan::FULL)
+        .with_span_events(FmtSpan::CLOSE | FmtSpan::NEW)
         .finish();
 
     tracing::subscriber::set_global_default(logger).expect("Setting default logger failed");
