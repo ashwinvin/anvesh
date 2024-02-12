@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use tracing::instrument;
+use url::Url;
 
 use crate::SearchResult;
 
@@ -23,7 +24,7 @@ impl Aggregator {
     #[instrument(level = "TRACE", skip_all)]
     pub fn process(&self, raw_results: Vec<Vec<SearchResult>>) -> Vec<SearchResult>{
         // TODO: Check if using a vec and doing linear scan is faster than or equal to leveraging a hashmap. 
-        let mut deduped_results: HashMap<String, SearchResult> = HashMap::new();
+        let mut deduped_results: HashMap<Url, SearchResult> = HashMap::new();
 
         for results in raw_results {
             let total_results = results.len() as f32;

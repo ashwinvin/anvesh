@@ -35,7 +35,7 @@ impl Engine for DuckDuckGo {
     async fn search_text(
         &self,
         qclient: Arc<NetworkHandler>,
-        page_idx: u16,
+        mut page_idx: u16,
         query: String,
         _relavancy: Option<Relavancy>,
         _safe_level: Option<SafeSearchLevel>,
@@ -46,10 +46,16 @@ impl Engine for DuckDuckGo {
                 format!("https://html.duckduckgo.com/html/?q={query}&s=&dc=&v=1&o=json&api=/d.js")
             }
             _ => {
+                if page_idx == 2{
+                    page_idx = 20;
+                } else {
+                    // The pattern is: 20, 70, 120 
+                    page_idx = ((page_idx - 1) * 50) + 20 ; 
+                }
                 format!(
                     "https://duckduckgo.com/html/?q={query}&s={}&dc={}&v=1&o=json&api=/d.js",
-                    page_idx * 30,
-                    page_idx * 30 + 1
+                    page_idx,
+                    page_idx + 1
                 )
             }
         };
@@ -71,14 +77,8 @@ impl Engine for DuckDuckGo {
         let page = Html::parse_document(&page);
 
         if let Some(no_result_msg) = page.select(&self.no_results_selector).nth(0) {
-            if no_result_msg
-                .value()
-                .attr("class")
-                .map(|classes| classes.contains("b_algo"))
-                .unwrap_or(false)
-            {
+                tracing::trace!("DuckDuckGo returned no results {}", no_result_msg.inner_html());
                 return Err(EngineError::NoResults);
-            }
         }
 
         let results = parse_generic_results(&page, &self.text_results_selector, |result| {
@@ -87,18 +87,19 @@ impl Engine for DuckDuckGo {
             let desc = result.select(&self.text_result_desc_selector).next();
 
             if let (Some(title), Some(url), Some(desc)) = (title, url, desc) {
-                Some(SearchResult::new(
+                SearchResult::new(
                     &format!("https://{}", url.inner_html().trim()),
                     title.inner_html().trim(),
                     desc.inner_html().trim(),
                     "DuckDuckGo",
-                ))
+                ).ok()
             } else {
                 None
             }
         })
         .map_err(|_| EngineError::ParseFailed)?;
 
+        tracing::trace!("DuckDuckGo returned {} results.", results.len());
         Ok(results)
     }
 }

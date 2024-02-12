@@ -13,6 +13,7 @@ pub mod handler;
 mod network;
 
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 #[derive(Debug, Copy, Clone, Deserialize)]
 pub enum SafeSearchLevel {
@@ -36,7 +37,7 @@ pub enum Relavancy {
 // The definition for a search result returned by an engine
 #[derive(Debug, Serialize)]
 pub struct SearchResult {
-    pub url: String,
+    pub url: Url,
     pub title: String,
     pub description: String,
     pub score: f32,
@@ -44,21 +45,21 @@ pub struct SearchResult {
     pub sources: Vec<String>,
 }
 
+impl PartialEq for SearchResult {
+    fn eq(&self, other: &Self) -> bool {
+        self.url == other.url
+    }
+}
+
 impl SearchResult {
-    pub fn new(url: &str, title: &str, description: &str, source: &str) -> Self {
-        Self {
-            url: url.to_string(),
+    pub fn new(url: &str, title: &str, description: &str, source: &str) -> Result<Self> {
+        Ok(Self {
+            url: Url::parse(url)?,
             title: title.to_string(),
             description: description.to_string(),
             score: 0.0,
             sources: vec![source.to_string()],
-        }
-    }
-}
-
-impl PartialEq for SearchResult {
-    fn eq(&self, other: &Self) -> bool {
-        self.url == other.url
+        })
     }
 }
 

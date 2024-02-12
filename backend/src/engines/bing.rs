@@ -90,18 +90,19 @@ impl Engine for Bing {
             let desc = result.select(&self.text_result_desc_selector).next();
 
             if let (Some(title), Some(url), Some(desc)) = (title, url, desc) {
-                Some(SearchResult::new(
+                SearchResult::new(
                     url.value().attr("href").unwrap(),
                     &self.re_strong.replace_all(title.inner_html().trim(), ""),
                     &self.re_span.replace_all(desc.inner_html().trim(), ""),
                     "Bing",
-                ))
+                ).ok()
             } else {
                 None
             }
         })
         .map_err(|_| EngineError::ParseFailed)?;
 
+        tracing::trace!("Bing returned {} results.", results.len());
         Ok(results)
     }
 }
