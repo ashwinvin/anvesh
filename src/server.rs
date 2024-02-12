@@ -25,7 +25,7 @@ pub async fn search_handler(
 ) -> Json<Value> {
     let results = backend.search(
         params.query,
-        params.page.unwrap_or(1),
+        params.page.unwrap_or(0),
         params.relavancy,
         params.safe_level,
     ).await;
