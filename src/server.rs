@@ -22,13 +22,13 @@ pub async fn index_handler() -> IndexTemplate {
 pub async fn search_handler(
     Query(params): Query<SearchParams>,
     State(backend): State<Arc<Handler>>,
-) -> Json<Value> {
-    let results = backend.search(
+) -> SearchTemplate {
+    let (results, errors) = backend.search(
         params.query,
         params.page.unwrap_or(0),
         params.relavancy,
         params.safe_level,
     ).await;
 
-    Json(json!(results))
+    SearchTemplate{results, errors}
 }

@@ -1,1 +1,57 @@
-{%extends "base.html"%}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Anvesh</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+
+    <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre-exp.min.css">
+    
+    <style>
+        .card {
+            border: .15rem solid rgba(48,55,66,.15);
+            padding: 0.01rem;
+        }
+        body{
+            background: rgba(48,55,66,.15);
+        }
+        .container{
+            max-width: 40rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        {% for result in results%}
+        <div class="card">
+
+            <div class="card-header">
+                <a class="card-title h5" href="{{result.url}}">{{result.title}}</a>
+                <br>
+                <a class="card-subtitle text-gray" href="{{result.url}}">{{result.url}}</a>                
+            </div>
+            <div class="divider"></div>
+            <div class="card-body">
+                {# TODO: IMPORTANT Escape only js blocks before using it here. This here can be used to do xss attacks #}
+                {{result.description|safe}}
+            </div>
+
+            <div class="card-footer text-tiny text-left text-gray">
+                <span> Score: {{result.score}}</span>
+                <span> Sources:
+                    <span>{{ result.sources|join(", ") }}</span>
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+</body>
+
+</html>

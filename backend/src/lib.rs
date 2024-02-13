@@ -8,7 +8,7 @@ use network::NetworkHandler;
 
 mod aggregator;
 mod engines;
-mod errors;
+pub mod errors;
 pub mod handler;
 mod network;
 
