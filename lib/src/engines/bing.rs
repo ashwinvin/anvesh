@@ -1,5 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
+use regex::Regex;
+
 use reqwest::header::HeaderMap;
 use scraper::{Html, Selector};
 
@@ -9,55 +11,51 @@ use crate::{
 
 use super::{parse_generic_results, Engine};
 
+const COOKIE_PARAMS: &str =
+    "_EDGE_V=1;SRCHD=AF=NOFORM;_Rwho=u=d;bngps=s=0;_UR=QS=0&TQS=0;_UR=QS=0&TQS=0;";
+
 #[derive(Debug)]
-pub struct DuckDuckGo {
+pub struct Bing {
     no_results_selector: Selector,
     text_results_selector: Selector,
     text_result_url_selector: Selector,
     text_result_title_selector: Selector,
     text_result_desc_selector: Selector,
+    re_strong: Regex,
+    re_span: Regex,
 }
 
-impl Default for DuckDuckGo {
-    fn default() -> Self {
-        Self {
-            no_results_selector: Selector::parse(".no-results").unwrap(),
-            text_results_selector: Selector::parse(".results>.result").unwrap(),
-            text_result_url_selector: Selector::parse(".result__url").unwrap(),
-            text_result_title_selector: Selector::parse(".result__title>.result__a").unwrap(),
-            text_result_desc_selector: Selector::parse(".result__snippet").unwrap(),
-        }
+impl Bing {
+    pub fn new() -> Arc<Box<dyn Engine>> {
+        Arc::new(Box::new(Self {
+            no_results_selector: Selector::parse(".b_results").unwrap(),
+            text_results_selector: Selector::parse(".b_algo").unwrap(),
+            text_result_url_selector: Selector::parse(".tpcn a.tilk").unwrap(),
+            text_result_title_selector: Selector::parse("h2 a").unwrap(),
+            text_result_desc_selector: Selector::parse(".b_caption p").unwrap(),
+
+            re_span: Regex::new(r#"<span.*?>.*?(?:</span>&nbsp;·|</span>)"#).unwrap(),
+            re_strong: Regex::new(r#"(<strong>|</strong>)"#).unwrap(),
+        }))
     }
 }
 
+
 #[async_trait::async_trait]
-impl Engine for DuckDuckGo {
+impl Engine for Bing {
     async fn search_text(
         &self,
         qclient: Arc<NetworkHandler>,
-        mut page_idx: u16,
+        page_idx: u16,
         query: String,
         _relavancy: Option<Relavancy>,
         _safe_level: Option<SafeSearchLevel>,
     ) -> Result<Vec<SearchResult>, EngineError> {
+        let cont_result = 10 * page_idx + 1;
 
-        let url: String = match page_idx {
-            0 => {
-                format!("https://html.duckduckgo.com/html/?q={query}&s=&dc=&v=1&o=json&api=/d.js")
-            }
-            _ => {
-                if page_idx == 2{
-                    page_idx = 20;
-                } else {
-                    // The pattern is: 20, 70, 120 
-                    page_idx = ((page_idx - 1) * 50) + 20 ; 
-                }
-                format!(
-                    "https://duckduckgo.com/html/?q={query}&s={}&dc={}&v=1&o=json&api=/d.js",
-                    page_idx,
-                    page_idx + 1
-                )
-            }
+        let url = match page_idx {
+            0 => format!("https://www.bing.com/search?q={query}"),
+            _ => format!("https://www.bing.com/search?q={query}&first={cont_result}"),
         };
 
         let headers = HeaderMap::try_from(&HashMap::from([
@@ -66,7 +64,7 @@ impl Engine for DuckDuckGo {
                 "CONTENT_TYPE".to_string(),
                 "application/x-www-form-urlencoded".to_string(),
             ),
-            ("COOKIE".to_string(), "kl=wt-wt".to_string()),
+            ("COOKIE".to_string(), COOKIE_PARAMS.to_string()),
         ]))
         .unwrap();
 
@@ -77,8 +75,14 @@ impl Engine for DuckDuckGo {
         let page = Html::parse_document(&page);
 
         if let Some(no_result_msg) = page.select(&self.no_results_selector).nth(0) {
-                tracing::trace!("DuckDuckGo returned no results {}", no_result_msg.inner_html());
+            if no_result_msg
+                .value()
+                .attr("class")
+                .map(|classes| classes.contains("b_algo"))
+                .unwrap_or(false)
+            {
                 return Err(EngineError::NoResults);
+            }
         }
 
         let results = parse_generic_results(&page, &self.text_results_selector, |result| {
@@ -88,10 +92,10 @@ impl Engine for DuckDuckGo {
 
             if let (Some(title), Some(url), Some(desc)) = (title, url, desc) {
                 SearchResult::new(
-                    &format!("https://{}", url.inner_html().trim()),
-                    title.inner_html().trim(),
-                    desc.inner_html().trim(),
-                    "DuckDuckGo",
+                    url.value().attr("href").unwrap(),
+                    &self.re_strong.replace_all(title.inner_html().trim(), ""),
+                    &self.re_span.replace_all(desc.inner_html().trim(), ""),
+                    "Bing",
                 ).ok()
             } else {
                 None
@@ -99,7 +103,7 @@ impl Engine for DuckDuckGo {
         })
         .map_err(|_| EngineError::ParseFailed)?;
 
-        tracing::trace!("DuckDuckGo returned {} results.", results.len());
+        tracing::trace!("Bing returned {} results.", results.len());
         Ok(results)
     }
 }

@@ -27,9 +27,9 @@ impl EngineHandler {
         for engine in activated_engines {
             // Add new engines here
             if engine.eq_ignore_ascii_case("bing") {
-                engines.push(Arc::new(Box::new(Bing::default())))
+                engines.push(Bing::new())
             } if engine.eq_ignore_ascii_case("duckduckgo") {
-                engines.push(Arc::new(Box::new(DuckDuckGo::default())))
+                engines.push(DuckDuckGo::new())
             }
         }
         if engines.is_empty(){

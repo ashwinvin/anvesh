@@ -1,5 +1,5 @@
 use askama_axum::Template;
-use backend::{SearchResult, errors::EngineError};
+use lib::{SearchResult, errors::EngineError};
 
 
 #[derive(Template)]

@@ -22,22 +22,22 @@ impl Aggregator {
     /// Deduplicate the search results and rank it based on its position and no of occurences
     #[instrument(level = "TRACE", skip_all)]
     pub fn process(&self, raw_results: Vec<Vec<SearchResult>>) -> Vec<SearchResult> {
-        // TODO: Check if using a vec and doing linear scan is faster than or equal to leveraging a hashmap.
         let mut deduped_results: HashMap<Url, SearchResult> = HashMap::new();
 
         for results in raw_results {
             let total_results = results.len() as f32;
+
             for (pos, mut result) in results.into_iter().rev().enumerate() {
                 match deduped_results.get_mut(&result.url) {
                     Some(existing_result) => {
                         tracing::debug!("Found duplicate result: {}", existing_result.url);
 
                         existing_result.score +=
-                            self.score_result(&result, pos as f32, total_results);
+                            self.score_result(&result, (pos + 1) as f32, total_results);
                         existing_result.sources.extend(result.sources);
                     }
                     None => {
-                        result.score = self.score_result(&result, pos as f32, total_results);
+                        result.score = self.score_result(&result, (pos + 1) as f32, total_results);
                         deduped_results.insert(result.url.clone(), result);
                     }
                 };
@@ -56,7 +56,7 @@ impl Aggregator {
         // The search result is guaranteed to have at least one element in the source field.
         let score_multiplier = self
             .score_multipliers
-            .get(result.sources.get(0).expect("Could not find engine score multiplier. Please do not change the name of engines in the config file."))
+            .get(result.sources.last().unwrap())
             .unwrap_or(&1.0); // This will never panic as engines not configured in config file will be loaded with defaults.
         score_multiplier * (pos / total_results) as f32
     }
