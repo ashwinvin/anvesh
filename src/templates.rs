@@ -1,5 +1,5 @@
 use askama_axum::Template;
-use lib::{errors::EngineError, SearchResult};
+use lib::{errors::EngineError, QueryResult, SearchResult};
 
 #[derive(Template)]
 #[template(path = "base.html")]
@@ -13,3 +13,12 @@ pub struct SearchTemplate {
     pub errors: Vec<EngineError>,
 }
 
+impl SearchTemplate {
+    pub fn new(result: QueryResult) -> SearchTemplate {
+        SearchTemplate {
+            query: result.query,
+            results: result.results,
+            errors: result.errors,
+        }
+    }
+}

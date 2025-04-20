@@ -22,6 +22,8 @@ impl Aggregator {
     /// Deduplicate the search results and rank it based on its position and no of occurences
     #[instrument(level = "TRACE", skip_all)]
     pub fn process(&self, raw_results: Vec<Vec<SearchResult>>) -> Vec<SearchResult> {
+        // Please send a pull request if you have a better way to do this!
+
         let mut deduped_results: HashMap<Url, SearchResult> = HashMap::new();
 
         for results in raw_results {
@@ -57,7 +59,8 @@ impl Aggregator {
         let score_multiplier = self
             .score_multipliers
             .get(result.sources.last().unwrap())
-            .unwrap_or(&1.0); // This will never panic as engines not configured in config file will be loaded with defaults.
+            .unwrap_or(&1.0);
+
         score_multiplier * (pos / total_results) as f32
     }
 }

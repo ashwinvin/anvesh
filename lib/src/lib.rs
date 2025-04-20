@@ -34,7 +34,7 @@ pub enum Relavancy {
     PastYear,
 }
 
-// The definition for a search result returned by an engine
+// Search result returned by an engine
 #[derive(Debug, Serialize)]
 pub struct SearchResult {
     pub url: Url,
@@ -66,6 +66,13 @@ impl SearchResult {
     }
 }
 
+#[derive(Serialize, Debug)]
+pub struct QueryResult {
+    pub query: String,
+    pub results: Vec<SearchResult>,
+    pub errors: Vec<EngineError>,
+}
+
 pub struct Handler {
     aggregator: Aggregator,
     engine_handler: EngineHandler,
@@ -95,12 +102,17 @@ impl Handler {
         page: u16,
         relavancy: Option<Relavancy>,
         safe_level: Option<SafeSearchLevel>,
-    ) -> (Vec<SearchResult>, Vec<EngineError>) {
-        let (raw_results, engine_errors) = self
+    ) -> QueryResult {
+        let (raw_results, errors) = self
             .engine_handler
-            .search(query, page, relavancy, safe_level)
+            .search(query.clone(), page, relavancy, safe_level)
             .await;
 
-        (self.aggregator.process(raw_results), engine_errors)
+        let results = self.aggregator.process(raw_results);
+        QueryResult {
+            query,
+            results,
+            errors,
+        }
     }
 }
