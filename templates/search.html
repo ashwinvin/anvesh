@@ -1,57 +1,120 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <meta charset='utf-8'>
-    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <title>Anvesh</title>
-    <meta name='viewport' content='width=device-width, initial-scale=1'>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anvesh - Search Results</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
 
-    <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre-exp.min.css">
-    
-    <style>
-        .card {
-            border: .15rem solid rgba(48,55,66,.15);
-            padding: 0.01rem;
-        }
-        body{
-            background: rgba(48,55,66,.15);
-        }
-        .container{
-            max-width: 40rem;
-        }
-    </style>
+    .logo {
+      color: #4285F4;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .result {
+      max-width: 600px;
+      margin-bottom: 1.5rem;
+    }
+
+    .result-title {
+      color: #1a0dab;
+      font-size: 1.1rem;
+    }
+
+    .result-url {
+      color: #0d652d;
+      font-size: 0.9rem;
+    }
+
+    .footer {
+      background: #f2f2f2;
+      padding: 1rem;
+    }
+
+    .search-container {
+      min-width: 35em;
+      position: relative;
+    }
+
+    .search-input {
+      padding-right: 80px;
+    }
+
+    /* Space for button */
+    .search-button {
+      position: absolute;
+      right: 4px;
+      top: 4px;
+      height: calc(100% - 8px);
+      border-radius: 0 9999px 9999px 0 !important;
+    }
+  </style>
 </head>
 
 <body>
 
-    <div class="container">
-
-        {% for result in results%}
-        <div class="card">
-
-            <div class="card-header">
-                <a class="card-title h5" href="{{result.url}}">{{result.title}}</a>
-                <br>
-                <a class="card-subtitle text-gray" href="{{result.url}}">{{result.url}}</a>                
-            </div>
-            <div class="divider"></div>
-            <div class="card-body">
-                {# TODO: IMPORTANT Escape only js blocks before using it here. This here can be used to do xss attacks #}
-                {{result.description|safe}}
-            </div>
-
-            <div class="card-footer text-tiny text-left text-gray">
-                <span> Score: {{result.score}}</span>
-                <span> Sources:
-                    <span>{{ result.sources|join(", ") }}</span>
-                </span>
-            </div>
-        </div>
-        {% endfor %}
-
+  <nav class="navbar is-white px-4 py-2">
+    <div class="navbar-brand">
+      <a class="logo navbar-item" href="/">Anvesh</a>
     </div>
+
+    <div class="navbar-item is-expanded">
+      <div class="field has-addons search-container">
+        <div class="control is-expanded">
+          <form action="/search">
+            <input class="input is-rounded" type="text" name="query" id="query" value="{{ query }}">
+            <button class="search-button button is-light is-rounded">Search</button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <!-- TODO: User perferences-->
+      </div>
+    </div>
+  </nav>
+
+  <div class="container px-4 py-2">
+    <p class="has-text-grey">About {{ results.len() }} results ({# time_taken #} seconds)</p>
+  </div>
+
+  <div class="container px-4 py-2">
+    {% for result in results %}
+    <div class="result">
+      <a href="{{ result.url }}" class="result-title">{{ result.title }}</a>
+      <p class="result-url">{{ result.url }}</p>
+      <p class="result-description">{{ result.description }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="container px-4 py-4">
+    <nav class="pagination is-centered" role="navigation">
+      <a class="pagination-previous">Previous</a>
+      <a class="pagination-next">Next</a>
+      <ul class="pagination-list">
+        <li><a class="pagination-link is-current">1</a></li>
+        <li><a class="pagination-link">2</a></li>
+        <li><a class="pagination-link">3</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <footer class="footer">
+    <div class="content has-text-centered">
+      <p>© 2023 Anvesh Search. Powered By Rust. Styled with Bulma.</p>
+    </div>
+  </footer>
+
 </body>
 
 </html>

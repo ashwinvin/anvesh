@@ -12,7 +12,6 @@ use clap::Parser;
 use axum::{routing::get, Router};
 use config::parse_config;
 
-use server::search_api_handler;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{fmt::format::FmtSpan, FmtSubscriber};
 
@@ -39,7 +38,6 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::subscriber::set_global_default(logger).expect("Setting default logger failed");
 
-    // TODO: THIS IS UGLY!! CLEANUP CONFIG INITIALISATION
     let score_multiplers = pconfig
         .upstream_search_engines
         .iter()
@@ -78,7 +76,6 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/", get(index_handler))
         .route("/search", get(search_handler))
-        .route("/api", get(search_api_handler))
         .with_state(Arc::new(backend_handler));
     let listener = tokio::net::TcpListener::bind((pconfig.bind_ip.clone(), pconfig.port))
         .await

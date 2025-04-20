@@ -1,30 +1,84 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <meta charset='utf-8'>
-    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <title>Anvesh</title>
-    <meta name='viewport' content='width=device-width, initial-scale=1'>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-    <!-- <script src='main.js'></script> -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anvesh Search</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo {
+      font-size: 5rem;
+      font-weight: bold;
+      color: #4285F4;
+    }
+
+    .search-container {
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .search-input {
+      padding-right: 100px;
+    }
+
+    /* Space for the button */
+    .search-button {
+      position: absolute;
+      right: 5px;
+      top: 50%;
+      transform: translateY(-50%);
+      height: calc(100% - 10px);
+      /* Slightly smaller height */
+    }
+
+    .footer {
+      margin-top: auto;
+      background: #f2f2f2;
+    }
+  </style>
 </head>
 
 <body>
-    <section class="section is-large">
-        <div class="has-text-centered is-justify-content-space-evenly my-0">
-            <div class="box pb-5">
-                <h1 class="title">Anvesh</h1>
-                <div class="container mx-5">
-                    <form action="/search" class="field has-addons">
-                        <input class="input is-medium" type="text" id="query" name="query" placeholder="Start Searching!">
-                        <button class="button is-medium">Search </button>
-                    </form>
-                </div>
-            </div><I></I>
+
+  <nav class="navbar is-white">
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <a class="mr-4" href="#">Settings</a>
+        <a href="#">Source</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="section has-text-centered">
+    <div class="logo mb-6">Anvesh</div>
+
+    <form action="/search">
+      <div class="search-container">
+        <div class="field">
+          <div class="control has-icons-left has-icons-right">
+
+            <input class="input search-input is-rounded is-medium" type="text" id="query" name="query"
+              placeholder="Search for ...">
+            <button class="search-button button is-light is-rounded">Search</button>
+          </div>
         </div>
-      </section>
-    
+    </form>
+  </section>
+
+  <footer class="footer">
+    <div class="content has-text-centered">
+      <p>Anvesh Search. Powered by Rust. Styled by Bulma.</p>
+    </div>
+  </footer>
+
 </body>
 
 </html>
