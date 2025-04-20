@@ -62,7 +62,6 @@ impl NetworkHandler {
             .text()
             .await?;
 
-        // this is just convenient.
         Ok(data.contains("\"IsTor\":true"))
     }
 
