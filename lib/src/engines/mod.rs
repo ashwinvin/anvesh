@@ -7,14 +7,18 @@ use std::sync::Arc;
 use scraper::{ElementRef, Html, Selector};
 use tracing::instrument;
 
-use crate::{errors::EngineError, network::NetworkHandler, Relavancy, SafeSearchLevel, SearchResult};
+use crate::{
+    errors::EngineErrorType, network::NetworkHandler, Relavancy, SafeSearchLevel, SearchResult,
+};
 
 /// The base trait that all upstream search engine parsers should implement.
 ///
 /// All engines must implement at least one of the search_* methods
 #[async_trait::async_trait]
 pub trait Engine: Send + Sync + Debug {
-    #[instrument(level="TRACE", skip(_query))]
+    fn get_name(&self) -> String;
+
+    #[instrument(level = "TRACE", skip(_query))]
     async fn search_text(
         &self,
         _qclient: Arc<NetworkHandler>,
@@ -22,7 +26,7 @@ pub trait Engine: Send + Sync + Debug {
         _query: String,
         _relavancy: Option<Relavancy>,
         _safe_level: Option<SafeSearchLevel>,
-    ) -> Result<Vec<SearchResult>, EngineError> {
+    ) -> Result<Vec<SearchResult>, EngineErrorType> {
         unimplemented!()
     }
 }
@@ -33,7 +37,6 @@ pub fn parse_generic_results(
     results_selector: &Selector,
     builder: impl Fn(ElementRef<'_>) -> Option<SearchResult>,
 ) -> anyhow::Result<Vec<SearchResult>> {
-
     Ok(page
         .select(results_selector)
         .filter_map(|result| builder(result))

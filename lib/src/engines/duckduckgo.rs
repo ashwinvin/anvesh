@@ -4,7 +4,7 @@ use reqwest::header::HeaderMap;
 use scraper::{Html, Selector};
 
 use crate::{
-    errors::EngineError, network::NetworkHandler, Relavancy, SafeSearchLevel, SearchResult,
+    errors::EngineErrorType, network::NetworkHandler, Relavancy, SafeSearchLevel, SearchResult,
 };
 
 use super::{parse_generic_results, Engine};
@@ -19,7 +19,7 @@ pub struct DuckDuckGo {
 }
 
 impl DuckDuckGo {
-    pub fn new() ->  Arc<Box<dyn Engine>>{
+    pub fn new() -> Arc<Box<dyn Engine>> {
         Arc::new(Box::new(Self {
             no_results_selector: Selector::parse(".no-results").unwrap(),
             text_results_selector: Selector::parse(".results>.result").unwrap(),
@@ -32,6 +32,10 @@ impl DuckDuckGo {
 
 #[async_trait::async_trait]
 impl Engine for DuckDuckGo {
+    fn get_name(&self) -> String {
+        "DuckDuckGo".to_string()
+    }
+
     async fn search_text(
         &self,
         qclient: Arc<NetworkHandler>,
@@ -39,18 +43,17 @@ impl Engine for DuckDuckGo {
         query: String,
         _relavancy: Option<Relavancy>,
         _safe_level: Option<SafeSearchLevel>,
-    ) -> Result<Vec<SearchResult>, EngineError> {
-
+    ) -> Result<Vec<SearchResult>, EngineErrorType> {
         let url: String = match page_idx {
             0 => {
                 format!("https://html.duckduckgo.com/html/?q={query}&s=&dc=&v=1&o=json&api=/d.js")
             }
             _ => {
-                if page_idx == 2{
+                if page_idx == 2 {
                     page_idx = 20;
                 } else {
-                    // The pattern is: 20, 70, 120 
-                    page_idx = ((page_idx - 1) * 50) + 20 ; 
+                    // The pattern is: 20, 70, 120
+                    page_idx = ((page_idx - 1) * 50) + 20;
                 }
                 format!(
                     "https://duckduckgo.com/html/?q={query}&s={}&dc={}&v=1&o=json&api=/d.js",
@@ -77,8 +80,11 @@ impl Engine for DuckDuckGo {
         let page = Html::parse_document(&page);
 
         if let Some(no_result_msg) = page.select(&self.no_results_selector).nth(0) {
-                tracing::trace!("DuckDuckGo returned no results {}", no_result_msg.inner_html());
-                return Err(EngineError::NoResults);
+            tracing::trace!(
+                "DuckDuckGo returned no results {}",
+                no_result_msg.inner_html()
+            );
+            return Err(EngineErrorType::NoResults);
         }
 
         let results = parse_generic_results(&page, &self.text_results_selector, |result| {
@@ -92,12 +98,13 @@ impl Engine for DuckDuckGo {
                     title.inner_html().trim(),
                     desc.inner_html().trim(),
                     "DuckDuckGo",
-                ).ok()
+                )
+                .ok()
             } else {
                 None
             }
         })
-        .map_err(|_| EngineError::ParseFailed)?;
+        .map_err(|_| EngineErrorType::ParseFailed)?;
 
         tracing::trace!("DuckDuckGo returned {} results.", results.len());
         Ok(results)

@@ -31,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
         _ => LevelFilter::INFO,
     };
     let logger = FmtSubscriber::builder()
-        .with_env_filter(format!("hyper=warn,backend={0},anvesh={0}", log_level))
+        .with_env_filter(format!("hyper=warn,lib={0},anvesh={0}", log_level))
         // .with_max_level(log_level)
         .with_span_events(FmtSpan::CLOSE | FmtSpan::NEW)
         .finish();
@@ -46,7 +46,8 @@ async fn main() -> anyhow::Result<()> {
 
     let engines = pconfig
         .upstream_search_engines
-        .keys().cloned()
+        .keys()
+        .cloned()
         .collect::<Vec<String>>();
 
     let backend_handler = match pconfig.proxy {

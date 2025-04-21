@@ -6,7 +6,7 @@ use reqwest::header::HeaderMap;
 use scraper::{Html, Selector};
 
 use crate::{
-    errors::EngineError, network::NetworkHandler, Relavancy, SafeSearchLevel, SearchResult,
+    errors::EngineErrorType, network::NetworkHandler, Relavancy, SafeSearchLevel, SearchResult,
 };
 
 use super::{parse_generic_results, Engine};
@@ -40,9 +40,11 @@ impl Bing {
     }
 }
 
-
 #[async_trait::async_trait]
 impl Engine for Bing {
+    fn get_name(&self) -> String {
+        "Bing".to_string()
+    }
     async fn search_text(
         &self,
         qclient: Arc<NetworkHandler>,
@@ -50,7 +52,7 @@ impl Engine for Bing {
         query: String,
         _relavancy: Option<Relavancy>,
         _safe_level: Option<SafeSearchLevel>,
-    ) -> Result<Vec<SearchResult>, EngineError> {
+    ) -> Result<Vec<SearchResult>, EngineErrorType> {
         let cont_result = 10 * page_idx + 1;
 
         let url = match page_idx {
@@ -81,7 +83,7 @@ impl Engine for Bing {
                 .map(|classes| classes.contains("b_algo"))
                 .unwrap_or(false)
             {
-                return Err(EngineError::NoResults);
+                return Err(EngineErrorType::NoResults);
             }
         }
 
@@ -96,12 +98,13 @@ impl Engine for Bing {
                     &self.re_strong.replace_all(title.inner_html().trim(), ""),
                     &self.re_span.replace_all(desc.inner_html().trim(), ""),
                     "Bing",
-                ).ok()
+                )
+                .ok()
             } else {
                 None
             }
         })
-        .map_err(|_| EngineError::ParseFailed)?;
+        .map_err(|_| EngineErrorType::ParseFailed)?;
 
         tracing::trace!("Bing returned {} results.", results.len());
         Ok(results)

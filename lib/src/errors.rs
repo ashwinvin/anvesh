@@ -1,8 +1,15 @@
-use thiserror::Error;
 use serde::Serialize;
+use thiserror::Error;
 
 #[derive(Debug, Error, Serialize)]
-pub enum EngineError {
+#[error("`engine` failed to fetch results")]
+pub struct EngineError {
+    pub engine: String,
+    pub source: EngineErrorType,
+}
+
+#[derive(Debug, Error, Serialize)]
+pub enum EngineErrorType {
     #[error("Failed to parse")]
     ParseFailed,
     #[error("Ratelimited by upstream engine")]
@@ -14,7 +21,7 @@ pub enum EngineError {
     #[error("Unknown error occured: {0}")]
     Unknown(String),
     #[error("Network error occured")]
-    Network(#[from] NetworkError)
+    Network(#[from] NetworkError),
 }
 
 #[derive(Debug, Error, Serialize)]
