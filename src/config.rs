@@ -25,10 +25,6 @@ pub struct Config {
     pub user_agents: Vec<String>,
     /// Whole numbers from 0 to 3. 0 corresponds to no filtering, 1 to low, etc.
     pub safe_search_level: u8,
-    /// Connection URL to redis server.
-    pub redis_url: Option<String>,
-    /// TTL for search results in cache.
-    pub cache_expiry_time: u64,
     /// Configuration for proxy
     pub proxy: Option<ProxyConfig>,
     /// Specific upstream engine settings.
@@ -61,54 +57,8 @@ pub struct EngineConfig {
     pub score_multiplier: f32,
 }
 
-impl Default for EngineConfig {
-    fn default() -> Self {
-        EngineConfig {
-            enabled: true,
-            timeout: 5,
-            score_multiplier: 1.0,
-        }
-    }
-}
-
-impl Default for RateLimiter {
-    fn default() -> Self {
-        Self {
-            number_of_requests: 10,
-            time_limit: 10,
-        }
-    }
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            log_level: 0,
-            threads: num_cpus::get(),
-            port: 2000,
-            bind_ip: "0.0.0.0".to_string(),
-            rate_limiter: Default::default(),
-            request_timeout: 5,
-            user_agents: [].to_vec(),
-            safe_search_level: 1,
-            redis_url: None,
-            cache_expiry_time: 0,
-            upstream_search_engines: HashMap::from([
-                ("Bing".to_string(), EngineConfig::default()),
-                ("DuckDuckGo".to_string(), EngineConfig::default()),
-            ]),
-            proxy: None,
-        }
-    }
-}
-
-pub fn parse_config(path: Option<impl AsRef<Path>>) -> Result<Config> {
-    match path {
-        Some(p) => {
-            let file = File::open(p)?;
-            let config: Config = from_reader(file)?;
-            Ok(config)
-        }
-        None => Ok(Config::default()),
-    }
+pub fn parse_config(path: impl AsRef<Path>) -> Result<Config> {
+    let file = File::open(path)?;
+    let config: Config = from_reader(file)?;
+    Ok(config)
 }
