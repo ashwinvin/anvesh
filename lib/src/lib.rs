@@ -85,9 +85,10 @@ impl Handler {
         proxy_url: Option<&str>,
         is_tor: Option<bool>,
         engines: &[String],
+        user_agents: Vec<String>,
     ) -> Result<Self> {
         let aggregator = Aggregator::new(engine_score_multipliers);
-        let network_handler = NetworkHandler::new(timeout, proxy_url, is_tor).await?;
+        let network_handler = NetworkHandler::new(timeout, proxy_url, is_tor, user_agents).await?;
         let engine_handler = EngineHandler::new(engines, network_handler)?;
 
         Ok(Self {

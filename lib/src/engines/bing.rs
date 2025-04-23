@@ -70,9 +70,7 @@ impl Engine for Bing {
         ]))
         .unwrap();
 
-        let page = qclient
-            .get_data(&url, headers, crate::network::SourceType::String)
-            .await?;
+        let page = qclient.get_data(&url, headers, false).await?;
 
         let page = Html::parse_document(&page);
 

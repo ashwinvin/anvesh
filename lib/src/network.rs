@@ -1,20 +1,16 @@
 use std::time::Duration;
 
-use anyhow::{Context, Result};
-use reqwest::{header::HeaderMap, Client, Proxy};
-
 use crate::errors::NetworkError;
-
-const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36";
-
-pub enum SourceType {
-    String,
-    Json,
-}
+use anyhow::{Context, Result};
+use reqwest::{
+    header::{HeaderMap, USER_AGENT},
+    Client, Proxy,
+};
 
 #[derive(Debug)]
 pub struct NetworkHandler {
     pub client: Client,
+    user_agents: Vec<String>,
 }
 
 impl NetworkHandler {
@@ -23,10 +19,9 @@ impl NetworkHandler {
         timeout: u16,
         proxy_url: Option<&str>,
         is_tor: Option<bool>,
+        user_agents: Vec<String>,
     ) -> Result<NetworkHandler> {
-        let client = Client::builder()
-            .user_agent(USER_AGENT)
-            .connect_timeout(Duration::from_secs(timeout.into()));
+        let client = Client::builder().connect_timeout(Duration::from_secs(timeout.into()));
 
         // TODO: Clean this up
         let client = if let Some(proxy_url) = proxy_url {
@@ -38,10 +33,8 @@ impl NetworkHandler {
             })?;
 
             // TODO: Check tor connection every x seconds to ensure integrity.
-            if is_tor.unwrap_or(false) {
-                if !(NetworkHandler::check_tor(&client).await?) {
-                    return Err(NetworkError::ProxyError(proxy_url.to_string()).into());
-                }
+            if is_tor.unwrap_or(false) && !(NetworkHandler::check_tor(&client).await?) {
+                return Err(NetworkError::ProxyError(proxy_url.to_string()).into());
             }
             client
         } else {
@@ -50,7 +43,10 @@ impl NetworkHandler {
             })?
         };
 
-        Ok(NetworkHandler { client })
+        Ok(NetworkHandler {
+            client,
+            user_agents,
+        })
     }
 
     /// Sends a request to `https://check.torproject.org/api/ip` to determine whether the connection uses tor.
@@ -71,18 +67,20 @@ impl NetworkHandler {
     pub async fn get_data(
         &self,
         url: &str,
-        headers: HeaderMap,
-        source_type: SourceType,
+        mut headers: HeaderMap,
+        is_json: bool,
     ) -> Result<String, NetworkError> {
+        let user_agent = &self.user_agents[fastrand::usize(..self.user_agents.len())];
+        headers.insert(USER_AGENT, user_agent.parse().unwrap());
+
         let data = self.client.get(url).headers(headers).send().await?;
-        
+
         tracing::trace!("Request to {url} returned {}", data.status());
 
-        let parsed_data = match source_type {
-            SourceType::String => data.text().await?,
-            SourceType::Json => data.json().await?,
-        };
-
-        Ok(parsed_data)
+        if is_json {
+            Ok(data.json().await?)
+        } else {
+            Ok(data.text().await?)
+        }
     }
 }

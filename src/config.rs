@@ -21,6 +21,8 @@ pub struct Config {
     pub rate_limiter: RateLimiter,
     /// Common request timeout (in seconds) for the requests made to upstream engines.
     pub request_timeout: u16,
+    /// User agents to be used when searching the web.
+    pub user_agents: Vec<String>,
     /// Whole numbers from 0 to 3. 0 corresponds to no filtering, 1 to low, etc.
     pub safe_search_level: u8,
     /// Connection URL to redis server.
@@ -56,10 +58,10 @@ pub struct RateLimiter {
 pub struct EngineConfig {
     pub enabled: bool,
     pub timeout: u128,
-    pub score_multiplier: f32
+    pub score_multiplier: f32,
 }
 
-impl Default for EngineConfig{
+impl Default for EngineConfig {
     fn default() -> Self {
         EngineConfig {
             enabled: true,
@@ -87,16 +89,14 @@ impl Default for Config {
             bind_ip: "0.0.0.0".to_string(),
             rate_limiter: Default::default(),
             request_timeout: 5,
+            user_agents: [].to_vec(),
             safe_search_level: 1,
             redis_url: None,
             cache_expiry_time: 0,
-            upstream_search_engines: HashMap::from([(
-                "Bing".to_string(),
-                EngineConfig::default(),
-            ), (
-                "DuckDuckGo".to_string(),
-                EngineConfig::default(),
-            )]),
+            upstream_search_engines: HashMap::from([
+                ("Bing".to_string(), EngineConfig::default()),
+                ("DuckDuckGo".to_string(), EngineConfig::default()),
+            ]),
             proxy: None,
         }
     }

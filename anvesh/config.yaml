@@ -10,6 +10,12 @@
 log_level: 2
 threads: 10 # Number of threads to spin up
 
+user_agents: 
+  - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
+  - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0"
+  - "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"
+  - "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0"
+
 ##########
 # Server #
 ##########
@@ -33,14 +39,6 @@ request_timeout: 30
 # 2 - Moderate ; Safe search level will be set to moderate on upstream engines
 # 3 - High ; Safe search level will be set to high on upstream engines
 safe_search_level: 1
-
-###########
-# Caching #
-###########
-
-redis_url: "redis://127.0.0.1:8082"
-# TTL for cached results (value in seconds and the value should be greater than or equal to 60 seconds).
-cache_expiry_time: 600
 
 ### Search Engines ###
 upstream_search_engines:

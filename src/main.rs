@@ -58,6 +58,7 @@ async fn main() -> anyhow::Result<()> {
                 Some(&proxy.connection_url),
                 Some(proxy.is_tor),
                 &engines,
+                pconfig.user_agents,
             )
             .await?
         }
@@ -68,6 +69,7 @@ async fn main() -> anyhow::Result<()> {
                 None,
                 None,
                 &engines,
+                pconfig.user_agents,
             )
             .await?
         }
