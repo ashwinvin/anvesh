@@ -4,6 +4,8 @@ pub mod duckduckgo;
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use bing::Bing;
+use duckduckgo::DuckDuckGo;
 use scraper::{ElementRef, Html, Selector};
 use tracing::instrument;
 
@@ -29,6 +31,11 @@ pub trait Engine: Send + Sync + Debug {
     ) -> Result<Vec<SearchResult>, EngineErrorType> {
         unimplemented!()
     }
+}
+
+/// A helper function to get all available engines.
+pub fn get_engines() -> Vec<Box<dyn Engine>> {
+    vec![Box::new(Bing), Box::new(DuckDuckGo)]
 }
 
 /// A helper function to select the main the "results" part of a page.

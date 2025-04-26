@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, LazyLock},
+};
 
 use reqwest::header::HeaderMap;
 use scraper::{Html, Selector};
@@ -10,25 +13,18 @@ use crate::{
 use super::{parse_generic_results, Engine};
 
 #[derive(Debug)]
-pub struct DuckDuckGo {
-    no_results_selector: Selector,
-    text_results_selector: Selector,
-    text_result_url_selector: Selector,
-    text_result_title_selector: Selector,
-    text_result_desc_selector: Selector,
-}
+pub struct DuckDuckGo;
 
-impl DuckDuckGo {
-    pub fn new() -> Arc<Box<dyn Engine>> {
-        Arc::new(Box::new(Self {
-            no_results_selector: Selector::parse(".no-results").unwrap(),
-            text_results_selector: Selector::parse(".results>.result").unwrap(),
-            text_result_url_selector: Selector::parse(".result__url").unwrap(),
-            text_result_title_selector: Selector::parse(".result__title>.result__a").unwrap(),
-            text_result_desc_selector: Selector::parse(".result__snippet").unwrap(),
-        }))
-    }
-}
+static NO_RESULTS_SELECTOR: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".no-results").unwrap());
+static TEXT_RESULTS_SELECTOR: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".results>.result").unwrap());
+static TEXT_RESULT_URL_SELECTOR: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".result__url").unwrap());
+static TEXT_RESULT_TITLE_SELECTOR: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".result__title>.result__a").unwrap());
+static TEXT_RESULT_DESC_SELECTOR: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse(".result__snippet").unwrap());
 
 #[async_trait::async_trait]
 impl Engine for DuckDuckGo {
@@ -77,7 +73,7 @@ impl Engine for DuckDuckGo {
 
         let page = Html::parse_document(&page);
 
-        if let Some(no_result_msg) = page.select(&self.no_results_selector).nth(0) {
+        if let Some(no_result_msg) = page.select(&NO_RESULTS_SELECTOR).nth(0) {
             tracing::trace!(
                 "DuckDuckGo returned no results {}",
                 no_result_msg.inner_html()
@@ -85,10 +81,10 @@ impl Engine for DuckDuckGo {
             return Err(EngineErrorType::NoResults);
         }
 
-        let results = parse_generic_results(&page, &self.text_results_selector, |result| {
-            let title = result.select(&self.text_result_title_selector).next();
-            let url = result.select(&self.text_result_url_selector).next();
-            let desc = result.select(&self.text_result_desc_selector).next();
+        let results = parse_generic_results(&page, &TEXT_RESULTS_SELECTOR, |result| {
+            let title = result.select(&TEXT_RESULT_TITLE_SELECTOR).next();
+            let url = result.select(&TEXT_RESULT_URL_SELECTOR).next();
+            let desc = result.select(&TEXT_RESULT_DESC_SELECTOR).next();
 
             if let (Some(title), Some(url), Some(desc)) = (title, url, desc) {
                 SearchResult::new(

@@ -1,48 +1,53 @@
 use crate::{
-    engines::{bing::Bing, duckduckgo::DuckDuckGo, Engine},
+    engines::{get_engines, Engine},
     errors::{EngineError, EngineErrorType},
     network::NetworkHandler,
     Relavancy, SafeSearchLevel, SearchResult,
 };
+
 use anyhow::Result;
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, OnceLock},
+};
+
 use tokio::task::{Id, JoinSet};
 use tracing::instrument;
 
+static ENGINES: OnceLock<Vec<Box<dyn Engine>>> = OnceLock::new();
+
 #[derive(Debug)]
 pub struct EngineHandler {
-    engines: Vec<Arc<Box<dyn Engine>>>,
     query_client: Arc<NetworkHandler>,
 }
 
 impl EngineHandler {
     /// Create a new engine handler based on provided list of engines.
-    #[instrument(level = "TRACE", skip(network_handler))]
-    pub fn new(
-        activated_engines: &[String],
-        network_handler: NetworkHandler,
-    ) -> Result<EngineHandler> {
-        let mut engines: Vec<Arc<Box<dyn Engine>>> = vec![];
+    pub fn new(engines: &[String], network_handler: NetworkHandler) -> Result<EngineHandler> {
+        let activated_engines: Vec<Box<dyn Engine>> = get_engines()
+            .into_iter()
+            .filter(|engine| engines.contains(&engine.get_name()))
+            .collect();
 
-        for engine in activated_engines {
-            // Add new engines here
-            if engine.eq_ignore_ascii_case("bing") {
-                engines.push(Bing::new())
-            }
-            if engine.eq_ignore_ascii_case("duckduckgo") {
-                engines.push(DuckDuckGo::new())
-            }
-        }
-        if engines.is_empty() {
+        if activated_engines.is_empty() {
             tracing::warn!(
                 "No engines were initialised. This might be unintentional, recheck config."
             )
         }
 
-        tracing::info!("Initialized {} engines", engines.len());
+        tracing::info!(
+            "Initialized {} engines: {}",
+            activated_engines.len(),
+            activated_engines
+                .iter()
+                .map(|e| e.get_name())
+                .collect::<Vec<String>>()
+                .join(", ")
+        );
+
+        let _ = ENGINES.set(activated_engines);
 
         Ok(EngineHandler {
-            engines,
             query_client: Arc::new(network_handler),
         })
     }
@@ -62,8 +67,7 @@ impl EngineHandler {
         let mut tasks = JoinSet::new();
         let mut task_ids: HashMap<Id, String> = HashMap::new();
 
-        for engine in &self.engines {
-            let engine = engine.clone();
+        for engine in ENGINES.get().unwrap().iter() {
             let engine_name = engine.get_name();
             let qclient = self.query_client.clone();
             let query = query.clone();

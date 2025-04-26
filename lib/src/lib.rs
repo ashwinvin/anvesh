@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use aggregator::Aggregator;
 use anyhow::Result;
-use errors::EngineError;
+use errors::{EngineError, EngineErrorType};
 use handler::EngineHandler;
 use network::NetworkHandler;
 
@@ -55,9 +55,14 @@ impl PartialEq for SearchResult {
 }
 
 impl SearchResult {
-    pub fn new(url: &str, title: &str, description: &str, source: &str) -> Result<Self> {
+    pub fn new(
+        url: &str,
+        title: &str,
+        description: &str,
+        source: &str,
+    ) -> Result<Self, EngineErrorType> {
         Ok(Self {
-            url: Url::parse(url)?,
+            url: Url::parse(url).map_err(|_| EngineErrorType::ParseFailed)?,
             title: title.to_string(),
             description: description.to_string(),
             score: 0.0,
