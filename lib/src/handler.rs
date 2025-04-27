@@ -2,7 +2,7 @@ use crate::{
     engines::{get_engines, Engine},
     errors::{EngineError, EngineErrorType},
     network::NetworkHandler,
-    Relavancy, SafeSearchLevel, SearchResult,
+    Query, SearchResult,
 };
 
 use anyhow::Result;
@@ -57,13 +57,7 @@ impl EngineHandler {
     /// An async task is spun up for every engine and is executed concurrently. The tasks are
     /// waited until the last engine returns.
     #[instrument(level = "TRACE", skip_all)]
-    pub async fn search(
-        &self,
-        query: String,
-        page: u16,
-        relavancy: Option<Relavancy>,
-        safe_level: Option<SafeSearchLevel>,
-    ) -> (Vec<Vec<SearchResult>>, Vec<EngineError>) {
+    pub async fn search(&self, query: Query) -> (Vec<Vec<SearchResult>>, Vec<EngineError>) {
         let mut tasks = JoinSet::new();
         let mut task_ids: HashMap<Id, String> = HashMap::new();
 
@@ -72,11 +66,7 @@ impl EngineHandler {
             let qclient = self.query_client.clone();
             let query = query.clone();
 
-            let handle = tasks.spawn(async move {
-                engine
-                    .search_text(qclient, page, query, relavancy, safe_level)
-                    .await
-            });
+            let handle = tasks.spawn(async move { engine.search(qclient, query).await });
             task_ids.insert(handle.id(), engine_name);
         }
 

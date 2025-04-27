@@ -64,9 +64,9 @@
       <div class="search-container">
         <div class="field">
           <div class="control has-icons-left has-icons-right">
-
-            <input class="input search-input is-rounded is-medium" type="text" id="query" name="query"
-              placeholder="Search for ...">
+            <!-- TODO: Support multiple search types -->
+            <input type="hidden" name="qtype" value="Text" />
+            <input class="input search-input is-rounded is-medium" type="text" name="text" placeholder="Search for ...">
             <button class="search-button button is-light is-rounded">Search</button>
           </div>
         </div>

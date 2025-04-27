@@ -68,7 +68,9 @@
       <div class="field has-addons search-container">
         <div class="control is-expanded">
           <form action="/search">
-            <input class="input is-rounded" type="text" name="query" id="query" value="{{ query }}">
+            <!-- TODO: Support multiple search types -->
+            <input type="hidden" name="qtype" value="Text" />
+            <input class="input is-rounded" type="text" name="text" value="{{ query }}">
             <button class="search-button button is-light is-rounded">Search</button>
           </form>
 

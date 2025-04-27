@@ -5,7 +5,7 @@ pub mod templates;
 
 use std::sync::Arc;
 
-use lib::Handler;
+use lib::{Handler, SafeSearchLevel};
 
 use clap::Parser;
 
@@ -30,9 +30,15 @@ async fn main() -> anyhow::Result<()> {
         4 => LevelFilter::ERROR,
         _ => LevelFilter::INFO,
     };
+    let safe_search_level = match pconfig.safe_search_level {
+        0 => SafeSearchLevel::Off,
+        1 => SafeSearchLevel::Medium,
+        2 => SafeSearchLevel::High,
+        _ => panic!("Invalid safe search level provided."), // We really don't want to run a search engine with no default filtering level
+    };
+
     let logger = FmtSubscriber::builder()
         .with_env_filter(format!("hyper=warn,lib={0},anvesh={0}", log_level))
-        // .with_max_level(log_level)
         .with_span_events(FmtSpan::CLOSE | FmtSpan::NEW)
         .finish();
 
@@ -59,6 +65,7 @@ async fn main() -> anyhow::Result<()> {
                 Some(proxy.is_tor),
                 &engines,
                 pconfig.user_agents,
+                safe_search_level,
             )
             .await?
         }
@@ -70,6 +77,7 @@ async fn main() -> anyhow::Result<()> {
                 None,
                 &engines,
                 pconfig.user_agents,
+                safe_search_level,
             )
             .await?
         }

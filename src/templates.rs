@@ -14,9 +14,9 @@ pub struct SearchTemplate {
 }
 
 impl SearchTemplate {
-    pub fn new(result: QueryResult) -> SearchTemplate {
+    pub fn new(query: String, result: QueryResult) -> SearchTemplate {
         SearchTemplate {
-            query: result.query,
+            query,
             results: result.results,
             errors: result.errors,
         }

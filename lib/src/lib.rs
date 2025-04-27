@@ -24,6 +24,7 @@ pub enum SafeSearchLevel {
     // `SafeSearchLevel::Medium` + internal allowlists and blocklists
     High,
 }
+
 /// Time Relavancy of query
 #[derive(Debug, Copy, Clone, Deserialize)]
 pub enum Relavancy {
@@ -32,6 +33,24 @@ pub enum Relavancy {
     PastWeek,
     PastMonth,
     PastYear,
+}
+
+/// Document type to search for
+#[derive(Debug, Copy, Clone, Deserialize)]
+pub enum QueryType {
+    Text,
+    Image,
+    File,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Query {
+    pub text: String,
+    pub qtype: QueryType,
+    pub page: Option<u16>,
+    // If safe search level is left `None`, the engine will use the provided default level
+    pub safe_search_level: Option<SafeSearchLevel>,
+    pub relavancy: Option<Relavancy>,
 }
 
 // Search result returned by an engine
@@ -73,7 +92,6 @@ impl SearchResult {
 
 #[derive(Serialize, Debug)]
 pub struct QueryResult {
-    pub query: String,
     pub results: Vec<SearchResult>,
     pub errors: Vec<EngineError>,
 }
@@ -81,6 +99,8 @@ pub struct QueryResult {
 pub struct Handler {
     aggregator: Aggregator,
     engine_handler: EngineHandler,
+    /// Default safe search level
+    safe_search_level: SafeSearchLevel,
 }
 
 impl Handler {
@@ -91,6 +111,7 @@ impl Handler {
         is_tor: Option<bool>,
         engines: &[String],
         user_agents: Vec<String>,
+        safe_search_level: SafeSearchLevel,
     ) -> Result<Self> {
         let aggregator = Aggregator::new(engine_score_multipliers);
         let network_handler = NetworkHandler::new(timeout, proxy_url, is_tor, user_agents).await?;
@@ -99,26 +120,19 @@ impl Handler {
         Ok(Self {
             aggregator,
             engine_handler,
+            safe_search_level,
         })
     }
 
-    pub async fn search(
-        &self,
-        query: String,
-        page: u16,
-        relavancy: Option<Relavancy>,
-        safe_level: Option<SafeSearchLevel>,
-    ) -> QueryResult {
-        let (raw_results, errors) = self
-            .engine_handler
-            .search(query.clone(), page, relavancy, safe_level)
-            .await;
+    pub async fn search(&self, mut query: Query) -> QueryResult {
+        query
+            .safe_search_level
+            .get_or_insert(self.safe_search_level.clone());
+
+        let (raw_results, errors) = self.engine_handler.search(query).await;
 
         let results = self.aggregator.process(raw_results);
-        QueryResult {
-            query,
-            results,
-            errors,
-        }
+
+        QueryResult { results, errors }
     }
 }

@@ -10,7 +10,8 @@ use scraper::{ElementRef, Html, Selector};
 use tracing::instrument;
 
 use crate::{
-    errors::EngineErrorType, network::NetworkHandler, Relavancy, SafeSearchLevel, SearchResult,
+    errors::EngineErrorType, network::NetworkHandler, Query, QueryType, Relavancy, SafeSearchLevel,
+    SearchResult,
 };
 
 /// The base trait that all upstream search engine parsers should implement.
@@ -19,6 +20,26 @@ use crate::{
 #[async_trait::async_trait]
 pub trait Engine: Send + Sync + Debug {
     fn get_name(&self) -> String;
+
+    async fn search(
+        &self,
+        qclient: Arc<NetworkHandler>,
+        query: Query,
+    ) -> Result<Vec<SearchResult>, EngineErrorType> {
+        match query.qtype {
+            QueryType::Text => {
+                self.search_text(
+                    qclient,
+                    query.page.unwrap_or(1),
+                    query.text,
+                    query.relavancy,
+                    query.safe_search_level,
+                )
+                .await
+            }
+            _ => unimplemented!(),
+        }
+    }
 
     #[instrument(level = "TRACE", skip(_query))]
     async fn search_text(
